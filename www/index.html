@@ -1,0 +1,212 @@
+<!doctype html>
+<html>
+
+<head>
+    <title>Sensor</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+</head>
+
+<body>
+    <div class="container">
+
+        <div class="card">
+            <div class="card-header">
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" role="switch" id="chkForward">
+                    <label class="form-check-label" for="chkForward">Forward</label>
+                </div>
+            </div>
+            <div class="card-body">
+                <form>
+
+                    <div class="form-floating mb-3">
+                        <input type="text" class="form-control" id="txtUrl" value="https://127.0.0.1:8080/events">
+                        <label for="txtUrl">Kafka gateway url</label>
+                    </div>
+                    <div class="form-floating mb-3">
+                        <input type="text" class="form-control" id="txtUser" value="demo">
+                        <label for="txtUser">User</label>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <br>
+        <div class="card">
+            <div class="card-header">
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" role="switch" id="chkGeolocation">
+                    <label class="form-check-label" for="chkGeolocation">Geolocation</label>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="input-group mb-3">
+                    <span class="input-group-text">lat</span>
+                    <input id="txtLat" type="text" class="form-control" readonly>
+                    <span class="input-group-text">long</span>
+                    <input id="txtLong" type="text" class="form-control" readonly>
+                    <span class="input-group-text">alt</span>
+                    <input id="txtAlt" type="text" class="form-control" readonly>
+                </div>
+            </div>
+        </div>
+        <br>
+        <div class="card">
+            <div class="card-header">
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" role="switch" id="chkOrientation">
+                    <label class="form-check-label" for="chkOrientation">Orientation</label>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="input-group mb-3">
+                    <span class="input-group-text">alpha</span>
+                    <input id="txtAlpha" type="text" class="form-control" readonly>
+                    <span class="input-group-text">beta</span>
+                    <input id="txtBeta" type="text" class="form-control" readonly>
+                    <span class="input-group-text">gamma</span>
+                    <input id="txtGamma" type="text" class="form-control" readonly>
+                </div>
+            </div>
+        </div>
+        <br>
+        <div class="card">
+            <div class="card-header">
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" role="switch" id="chkMotion">
+                    <label class="form-check-label" for="chkMotion">Motion</label>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="input-group mb-3">
+                    <span class="input-group-text">x</span>
+                    <input id="txtX" type="text" class="form-control" readonly>
+                    <span class="input-group-text">y</span>
+                    <input id="txtY" type="text" class="form-control" readonly>
+                    <span class="input-group-text">z</span>
+                    <input id="txtZ" type="text" class="form-control" readonly>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p"
+        crossorigin="anonymous"></script>
+    <script>
+        document.getElementById("chkForward").addEventListener("change", (ev) => {
+            console.log("changed to " + document.getElementById("chkForward").checked);
+
+        });
+
+        if ("geolocation" in navigator) {
+            document.getElementById("chkGeolocation").addEventListener("change", (ev) => {
+                console.log("changed to " + document.getElementById("chkGeolocation").checked);
+                if (document.getElementById("chkGeolocation").checked) {
+                    watchGeolocation = navigator.geolocation.watchPosition(
+                        (pos) => {
+                            document.getElementById("txtLat").value = pos.coords.latitude;
+                            document.getElementById("txtLong").value = pos.coords.longitude;
+                            document.getElementById("txtAlt").value = pos.coords.altitude;
+                            // send to backend
+                            if (document.getElementById("chkForward").checked) {
+                                axios.post(
+                                    document.getElementById("txtUrl").value,
+                                    {
+                                        type: "geolocation",
+                                        user: document.getElementById("txtUser").value,
+                                        lat: pos.coords.latitude,
+                                        long: pos.coords.longitude,
+                                        alt: pos.coords.altitude,
+                                        ts: Date.now()
+                                    }
+                                );
+                            }
+                        },
+                        (err) => {
+                            console.log(`ERROR: ${err.stack}`);
+                        }
+                    );
+                }
+                else {
+                    navigator.geolocation.clearWatch(watchGeolocation);
+                    document.getElementById("txtLat").value = "";
+                    document.getElementById("txtLong").value = "";
+                }
+            });
+        } else {
+            document.getElementById("chkGeolocation").disabled = true;
+        }
+
+
+        document.getElementById("chkOrientation").addEventListener("change", (ev) => {
+            if (document.getElementById("chkOrientation").checked) {
+                orientationListener = (ev) => {
+                    if (ev.alpha === null) return;
+                    document.getElementById("txtAlpha").value = ev.alpha;
+                    document.getElementById("txtBeta").value = ev.beta;
+                    document.getElementById("txtGamma").value = ev.gamma;
+                    // send to backend
+                    if (document.getElementById("chkForward").checked) {
+                        axios.post(
+                            document.getElementById("txtUrl").value,
+                            {
+                                type: "orientation",
+                                user: document.getElementById("txtUser").value,
+                                alpha: ev.alpha,
+                                beta: ev.beta,
+                                gamma: ev.gamma,
+                                ts: Date.now()
+                            }
+                        );
+                    }
+                }
+                window.addEventListener("deviceorientation", orientationListener);
+            } else {
+                window.removeEventListener("deviceorientation", orientationListener);
+                document.getElementById("txtAlpha").value = "";
+                document.getElementById("txtBeta").value = "";
+                document.getElementById("txtGamma").value = "";
+            }
+
+        });
+
+
+        document.getElementById("chkMotion").addEventListener("change", (ev) => {
+            if (document.getElementById("chkMotion").checked) {
+                motionListener = (ev) => {
+                    if (ev.acceleration.x === null) return;
+                    document.getElementById("txtX").value = ev.acceleration.x;
+                    document.getElementById("txtY").value = ev.acceleration.y;
+                    document.getElementById("txtZ").value = ev.acceleration.z;
+                    // send to backend
+                    if (document.getElementById("chkForward").checked) {
+                        axios.post(
+                            document.getElementById("txtUrl").value,
+                            {
+                                type: "motion",
+                                user: document.getElementById("txtUser").value,
+                                x: ev.acceleration.x,
+                                y: ev.acceleration.y,
+                                z: ev.acceleration.z,
+                                ts: Date.now()
+                            }
+                        );
+                    }
+                };
+                window.addEventListener("devicemotion", motionListener);
+            } else {
+                window.removeEventListener("devicemotion", motionListener);
+                document.getElementById("txtX").value = "";
+                document.getElementById("txtY").value = "";
+                document.getElementById("txtZ").value = "";
+            }
+
+        });
+    </script>
+</body>
+
+</html>
