@@ -37,6 +37,10 @@ bin/kafka-server-start.sh config/server.properties
 5. Start the Web app server:
 python3 getaway.py
 
+This will start a server under the private IP address. You will need to connect to - https://ip-address:8080 with your mobile phone and change the 127.0.0.1 address at the web html page to the ip-address. In my case 192.168.1.46 as can be seen in the picture. Then you will need to enable forward and motion in that order.
+
+![Alt text](img/webpage.png)
+
 6. Start the detector server:
 bin/spark-submit --jars spark-streaming-kafka-0-8-assembly_2.11-2.4.8.jar /location/detector.py
 
